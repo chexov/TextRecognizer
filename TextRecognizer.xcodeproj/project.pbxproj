@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		A65AEA90203CF1098465DE93 /* Pods_TextRecognizer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CF41262C65C5E8DB0986D88C /* Pods_TextRecognizer.framework */; };
-		AED90BC6D279062CA70E55BB /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = AED9084B06910F8D463C0FCB /* Podfile */; };
 		E894B4F01F83CB1900416A60 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E894B4EF1F83CB1900416A60 /* AppDelegate.swift */; };
 		E894B4F21F83CB1900416A60 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E894B4F11F83CB1900416A60 /* ViewController.swift */; };
 		E894B4F51F83CB1900416A60 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E894B4F31F83CB1900416A60 /* Main.storyboard */; };
@@ -22,7 +21,6 @@
 
 /* Begin PBXFileReference section */
 		084712F824755EC31DFDAAF0 /* Pods-TextRecognizer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TextRecognizer.debug.xcconfig"; path = "Pods/Target Support Files/Pods-TextRecognizer/Pods-TextRecognizer.debug.xcconfig"; sourceTree = "<group>"; };
-		AED9084B06910F8D463C0FCB /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
 		CF41262C65C5E8DB0986D88C /* Pods_TextRecognizer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TextRecognizer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3BF178D99F6FB03A7DBA71E /* Pods-TextRecognizer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TextRecognizer.release.xcconfig"; path = "Pods/Target Support Files/Pods-TextRecognizer/Pods-TextRecognizer.release.xcconfig"; sourceTree = "<group>"; };
 		E894B4EC1F83CB1900416A60 /* TextRecognizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TextRecognizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,7 +96,6 @@
 				E894B4F61F83CB1900416A60 /* Assets.xcassets */,
 				E894B4F81F83CB1900416A60 /* LaunchScreen.storyboard */,
 				E894B4FB1F83CB1900416A60 /* Info.plist */,
-				AED9084B06910F8D463C0FCB /* Podfile */,
 			);
 			path = TextRecognizer;
 			sourceTree = "<group>";
@@ -168,7 +165,6 @@
 				E894B4FA1F83CB1900416A60 /* LaunchScreen.storyboard in Resources */,
 				E894B4F71F83CB1900416A60 /* Assets.xcassets in Resources */,
 				E894B4F51F83CB1900416A60 /* Main.storyboard in Resources */,
-				AED90BC6D279062CA70E55BB /* Podfile in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

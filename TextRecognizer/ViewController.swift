@@ -23,6 +23,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     var ocrText = "";
     var textMetadata = [Int: [Int: String]]()
+    var newImage:UIImage!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -80,6 +81,13 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     func detectText(image: UIImage) {
         self.ocrText = "";
+        var numberOfWords = 0
+        let imageSize = image.size
+        let scale: CGFloat = 0
+        UIGraphicsBeginImageContextWithOptions(imageSize, false, scale)
+        let context = UIGraphicsGetCurrentContext()
+        image.draw(at: CGPoint(x: 0, y: 0))
+
         let convertedImage = image |> adjustColors |> convertToGrayscale
         let handler = VNImageRequestHandler(cgImage: convertedImage.cgImage!)
         let request: VNDetectTextRectanglesRequest =
@@ -94,32 +102,49 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
                     self.handleEmptyResults()
                     return
                 }
-                var numberOfWords = 0
+                
+                
                 for textObservation in results {
-                    var numberOfCharacters = 0
                     let croppedImage = crop(image: image, boundingBox: textObservation.boundingBox)
+                    let grayScaleImage = convertToGrayscale(image: croppedImage!)
                     
-                    self.imageView.image?.draw(at: <#T##CGPoint#>)
-                    self.swiftOCRInstance.recognize(croppedImage!) {
+                    let boundingBox = textObservation.boundingBox;
+                    var t: CGAffineTransform = CGAffineTransform.identity;
+                    t = t.scaledBy(x: image.size.width, y: -image.size.height);
+                    t = t.translatedBy(x: 0, y: -1 );
+                    let x = boundingBox.applying(t).origin.x
+                    let y = boundingBox.applying(t).origin.y
+                    let width = boundingBox.applying(t).width
+                    let height = boundingBox.applying(t).height
+//
+//                    let rectangle = CGRect(x: 0, y: (imageSize.height/2) - 30, width: imageSize.width, height: 60)
+//                    context?.setFillColor(UIColor.black.cgColor)
+//                    context?.addRect(rectangle)
+
+//                    context?.setStrokeColor(UIColor.yellow.cgColor)
+                    let colorSpace = CGColorSpaceCreateDeviceRGB()
+                    context?.setStrokeColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 1])!)
+                    context?.setFillColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 0.42])!)
+                    context?.setLineWidth(1)
+                    context?.addRect(CGRect(x:x, y:y, width:width, height:height))
+                    context?.drawPath(using: .fill)
+                    
+                    
+                    self.swiftOCRInstance.recognize(grayScaleImage) {
                         recognizedString in
                         print("ocr=" + recognizedString as String)
                         self.ocrText = self.ocrText + "; " + recognizedString as String;
                         self.handleResult2()
-                        //            self.detectedText.text = recognizedString
+
                     }
                     
-//                    for rectangleObservation in textObservation.characterBoxes! {
-//                        print(rectangleObservation)
-//                        let croppedImage = crop(image: image, boundingBox: rectangleObservation.boundingBox)
-//                        if let croppedImage = croppedImage {
-//                            let processedImage = preProcess(image: croppedImage)
-////                            self.classifyImage(image: processedImage,
-////                                               wordNumber: numberOfWords,
-////                                               characterNumber: numberOfCharacters)
-//                            numberOfCharacters += 1
-//                        }
-//                    }
-                    numberOfWords += 1
+               
+                }
+                
+                self.newImage = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                DispatchQueue.main.async {
+                    self.imageView.image = self.newImage
                 }
             }
         })

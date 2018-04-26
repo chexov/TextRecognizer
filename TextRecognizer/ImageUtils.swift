@@ -155,7 +155,7 @@ func crop(image: UIImage, boundingBox: CGRect) -> UIImage? {
     let y = boundingBox.applying(t).origin.y
     let width = boundingBox.applying(t).width
     let height = boundingBox.applying(t).height
-    let fromRect = CGRect(x: x, y: y, width: width, height: height)
+    let fromRect = CGRect(x: x-32, y: y, width: width+32, height: height)
     let drawImage = image.cgImage!.cropping(to: fromRect)
     if let drawImage = drawImage {
         let uiImage = UIImage(cgImage: drawImage)
