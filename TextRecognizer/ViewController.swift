@@ -9,6 +9,7 @@
 import UIKit
 import CoreML
 import Vision
+import SwiftOCR
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -18,6 +19,9 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     var model: VNCoreMLModel!
     
+    let swiftOCRInstance = SwiftOCR()
+    
+    var ocrText = "";
     var textMetadata = [Int: [Int: String]]()
     
     override func viewDidLoad() {
@@ -75,6 +79,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     // MARK: text detection
     
     func detectText(image: UIImage) {
+        self.ocrText = "";
         let convertedImage = image |> adjustColors |> convertToGrayscale
         let handler = VNImageRequestHandler(cgImage: convertedImage.cgImage!)
         let request: VNDetectTextRectanglesRequest =
@@ -92,16 +97,28 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
                 var numberOfWords = 0
                 for textObservation in results {
                     var numberOfCharacters = 0
-                    for rectangleObservation in textObservation.characterBoxes! {
-                        let croppedImage = crop(image: image, rectangle: rectangleObservation)
-                        if let croppedImage = croppedImage {
-                            let processedImage = preProcess(image: croppedImage)
-                            self.classifyImage(image: processedImage,
-                                               wordNumber: numberOfWords,
-                                               characterNumber: numberOfCharacters)
-                            numberOfCharacters += 1
-                        }
+                    let croppedImage = crop(image: image, boundingBox: textObservation.boundingBox)
+                    
+                    self.imageView.image?.draw(at: <#T##CGPoint#>)
+                    self.swiftOCRInstance.recognize(croppedImage!) {
+                        recognizedString in
+                        print("ocr=" + recognizedString as String)
+                        self.ocrText = self.ocrText + "; " + recognizedString as String;
+                        self.handleResult2()
+                        //            self.detectedText.text = recognizedString
                     }
+                    
+//                    for rectangleObservation in textObservation.characterBoxes! {
+//                        print(rectangleObservation)
+//                        let croppedImage = crop(image: image, boundingBox: rectangleObservation.boundingBox)
+//                        if let croppedImage = croppedImage {
+//                            let processedImage = preProcess(image: croppedImage)
+////                            self.classifyImage(image: processedImage,
+////                                               wordNumber: numberOfWords,
+////                                               characterNumber: numberOfCharacters)
+//                            numberOfCharacters += 1
+//                        }
+//                    }
                     numberOfWords += 1
                 }
             }
@@ -123,31 +140,49 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     func classifyImage(image: UIImage, wordNumber: Int, characterNumber: Int) {
-        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
-            guard let results = request.results as? [VNClassificationObservation],
-                let topResult = results.first else {
-                    fatalError("Unexpected result type from VNCoreMLRequest")
-            }
-            let result = topResult.identifier
-            let classificationInfo: [String: Any] = ["wordNumber" : wordNumber,
-                                                     "characterNumber" : characterNumber,
-                                                     "class" : result]
-            self?.handleResult(classificationInfo)
+        swiftOCRInstance.recognize(image) {
+            recognizedString in
+            print(recognizedString)
+            self.ocrText = recognizedString;
+            self.handleResult2()
+//            self.detectedText.text = recognizedString
         }
-        guard let ciImage = CIImage(image: image) else {
-            fatalError("Could not convert UIImage to CIImage :(")
-        }
-        let handler = VNImageRequestHandler(ciImage: ciImage)
-        DispatchQueue.global(qos: .userInteractive).async {
-            do {
-                try handler.perform([request])
-            }
-            catch {
-                print(error)
-            }
+        
+//        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
+//            guard let results = request.results as? [VNClassificationObservation],
+//                let topResult = results.first else {
+//                    fatalError("Unexpected result type from VNCoreMLRequest")
+//            }
+//            let result = topResult.identifier
+//            let classificationInfo: [String: Any] = ["wordNumber" : wordNumber,
+//                                                     "characterNumber" : characterNumber,
+//                                                     "class" : result]
+//            self?.handleResult(classificationInfo)
+//        }
+
+//        guard let ciImage = CIImage(image: image) else {
+//            fatalError("Could not convert UIImage to CIImage :(")
+//        }
+//        let handler = VNImageRequestHandler(ciImage: ciImage)
+//        DispatchQueue.global(qos: .userInteractive).async {
+//            do {
+//                try handler.perform([request])
+//            }
+//            catch {
+//                print(error)
+//            }
+//        }
+    }
+    func handleResult2() {
+        objc_sync_enter(self)
+        
+        objc_sync_exit(self)
+        DispatchQueue.main.async {
+            self.hideActivityIndicator()
+            self.showDetectedText()
         }
     }
-    
+
     func handleResult(_ result: [String: Any]) {
         objc_sync_enter(self)
         guard let wordNumber = result["wordNumber"] as? Int else {
@@ -178,12 +213,14 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         var result: String = ""
         if (textMetadata.isEmpty) {
             detectedText.text = "The image does not contain any text."
+            detectedText.text = ocrText
             return
         }
         let sortedKeys = textMetadata.keys.sorted()
         for sortedKey in sortedKeys {
             result +=  word(fromDictionary: textMetadata[sortedKey]!) + " "
         }
+        detectedText.text = ocrText
         detectedText.text = result
     }
     
