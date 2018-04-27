@@ -12,31 +12,31 @@ import Vision
 import SwiftOCR
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    
+
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var detectedText: UILabel!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    
+
     var model: VNCoreMLModel!
-    
+
     let swiftOCRInstance = SwiftOCR()
-    
+
     var ocrText = "";
     var textMetadata = [Int: [Int: String]]()
-    var newImage:UIImage!
-    
+    var newImage: UIImage!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         loadModel()
         activityIndicator.hidesWhenStopped = true
     }
-    
+
     private func loadModel() {
         model = try? VNCoreMLModel(for: Alphanum_28x28().model)
     }
 
     // MARK: IBAction
-    
+
     @IBAction func pickImageClicked(_ sender: UIButton) {
         let alertController = createActionSheet()
         let action1 = UIAlertAction(title: "Camera", style: .default, handler: {
@@ -49,21 +49,21 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         })
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         addActionsToAlertController(controller: alertController,
-                                    actions: [action1, action2, cancelAction])
+                actions: [action1, action2, cancelAction])
         self.present(alertController, animated: true, completion: nil)
     }
-    
+
     // MARK: image picker
-    
+
     func showImagePicker(withType type: UIImagePickerControllerSourceType) {
         let pickerController = UIImagePickerController()
         pickerController.delegate = self
         pickerController.sourceType = type
         present(pickerController, animated: true)
     }
-    
+
     func imagePickerController(_ picker: UIImagePickerController,
-                               didFinishPickingMediaWithInfo info: [String : Any]) {
+                               didFinishPickingMediaWithInfo info: [String: Any]) {
         dismiss(animated: true)
         guard let image = info[UIImagePickerControllerOriginalImage] as? UIImage else {
             fatalError("Couldn't load image")
@@ -76,9 +76,9 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             self.detectText(image: newImage)
         }
     }
-    
+
     // MARK: text detection
-    
+
     func detectText(image: UIImage) {
         self.ocrText = "";
         var numberOfWords = 0
@@ -91,63 +91,57 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         let convertedImage = image |> adjustColors |> convertToGrayscale
         let handler = VNImageRequestHandler(cgImage: convertedImage.cgImage!)
         let request: VNDetectTextRectanglesRequest =
-            VNDetectTextRectanglesRequest(completionHandler: { [unowned self] (request, error) in
-            if (error != nil) {
-                print("Got Error In Run Text Dectect Request :(")
-            } else {
-                guard let results = request.results as? Array<VNTextObservation> else {
-                    fatalError("Unexpected result type from VNDetectTextRectanglesRequest")
-                }
-                if (results.count == 0) {
-                    self.handleEmptyResults()
-                    return
-                }
-                
-                
-                for textObservation in results {
-                    let croppedImage = crop(image: image, boundingBox: textObservation.boundingBox)
-                    let grayScaleImage = convertToGrayscale(image: croppedImage!)
-                    
-                    let boundingBox = textObservation.boundingBox;
-                    var t: CGAffineTransform = CGAffineTransform.identity;
-                    t = t.scaledBy(x: image.size.width, y: -image.size.height);
-                    t = t.translatedBy(x: 0, y: -1 );
-                    let x = boundingBox.applying(t).origin.x
-                    let y = boundingBox.applying(t).origin.y
-                    let width = boundingBox.applying(t).width
-                    let height = boundingBox.applying(t).height
-//
-//                    let rectangle = CGRect(x: 0, y: (imageSize.height/2) - 30, width: imageSize.width, height: 60)
-//                    context?.setFillColor(UIColor.black.cgColor)
-//                    context?.addRect(rectangle)
+                VNDetectTextRectanglesRequest(completionHandler: { [unowned self] (request, error) in
+                    if (error != nil) {
+                        print("Got Error In Run Text Dectect Request :(")
+                    } else {
+                        guard let results = request.results as? Array<VNTextObservation> else {
+                            fatalError("Unexpected result type from VNDetectTextRectanglesRequest")
+                        }
+                        if (results.count == 0) {
+                            self.handleEmptyResults()
+                            return
+                        }
 
-//                    context?.setStrokeColor(UIColor.yellow.cgColor)
-                    let colorSpace = CGColorSpaceCreateDeviceRGB()
-                    context?.setStrokeColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 1])!)
-                    context?.setFillColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 0.42])!)
-                    context?.setLineWidth(1)
-                    context?.addRect(CGRect(x:x, y:y, width:width, height:height))
-                    context?.drawPath(using: .fill)
-                    
-                    
-                    self.swiftOCRInstance.recognize(grayScaleImage) {
-                        recognizedString in
-                        print("ocr=" + recognizedString as String)
-                        self.ocrText = self.ocrText + "; " + recognizedString as String;
-                        self.handleResult2()
 
+                        for textObservation in results {
+                            let croppedImage = crop(image: image, boundingBox: textObservation.boundingBox)
+                            let grayScaleImage = convertToGrayscale(image: croppedImage!)
+
+                            let boundingBox = textObservation.boundingBox;
+                            var t: CGAffineTransform = CGAffineTransform.identity;
+                            t = t.scaledBy(x: image.size.width, y: -image.size.height);
+                            t = t.translatedBy(x: 0, y: -1);
+                            let x = boundingBox.applying(t).origin.x
+                            let y = boundingBox.applying(t).origin.y
+                            let width = boundingBox.applying(t).width
+                            let height = boundingBox.applying(t).height
+
+                            let colorSpace = CGColorSpaceCreateDeviceRGB()
+                            context?.setStrokeColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 1])!)
+                            context?.setFillColor(CGColor(colorSpace: colorSpace, components: [0, 0, 1, 0.42])!)
+                            context?.setLineWidth(1)
+                            context?.addRect(CGRect(x: x, y: y, width: width, height: height))
+                            context?.drawPath(using: .fill)
+
+
+                            self.swiftOCRInstance.recognize(grayScaleImage) {
+                                recognizedString in
+                                print("ocr=" + recognizedString as String)
+                                self.ocrText = self.ocrText + "; " + recognizedString as String;
+                                self.handleResult2()
+                            }
+
+
+                        }
+
+                        self.newImage = UIGraphicsGetImageFromCurrentImageContext()
+                        UIGraphicsEndImageContext()
+                        DispatchQueue.main.async {
+                            self.imageView.image = self.newImage
+                        }
                     }
-                    
-               
-                }
-                
-                self.newImage = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                DispatchQueue.main.async {
-                    self.imageView.image = self.newImage
-                }
-            }
-        })
+                })
         request.reportCharacterBoxes = true
         do {
             try handler.perform([request])
@@ -155,15 +149,15 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             print(error)
         }
     }
-    
+
     func handleEmptyResults() {
         DispatchQueue.main.async {
             self.hideActivityIndicator()
             self.detectedText.text = "The image does not contain any text."
         }
-        
+
     }
-    
+
     func classifyImage(image: UIImage, wordNumber: Int, characterNumber: Int) {
         swiftOCRInstance.recognize(image) {
             recognizedString in
@@ -172,7 +166,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             self.handleResult2()
 //            self.detectedText.text = recognizedString
         }
-        
+
 //        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
 //            guard let results = request.results as? [VNClassificationObservation],
 //                let topResult = results.first else {
@@ -198,9 +192,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 //            }
 //        }
     }
+
     func handleResult2() {
         objc_sync_enter(self)
-        
+
         objc_sync_exit(self)
         DispatchQueue.main.async {
             self.hideActivityIndicator()
@@ -233,7 +228,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             self.showDetectedText()
         }
     }
-    
+
     func showDetectedText() {
         var result: String = ""
         if (textMetadata.isEmpty) {
@@ -243,13 +238,13 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         }
         let sortedKeys = textMetadata.keys.sorted()
         for sortedKey in sortedKeys {
-            result +=  word(fromDictionary: textMetadata[sortedKey]!) + " "
+            result += word(fromDictionary: textMetadata[sortedKey]!) + " "
         }
         detectedText.text = ocrText
         detectedText.text = result
     }
-    
-    func word(fromDictionary dictionary: [Int : String]) -> String {
+
+    func word(fromDictionary dictionary: [Int: String]) -> String {
         let sortedKeys = dictionary.keys.sorted()
         var word: String = ""
         for sortedKey in sortedKeys {
@@ -258,18 +253,18 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         }
         return word
     }
-    
+
     // MARK: private
-    
+
     private func clearOldData() {
         detectedText.text = ""
         textMetadata = [:]
     }
-    
+
     private func showActivityIndicator() {
         activityIndicator.startAnimating()
     }
-    
+
     private func hideActivityIndicator() {
         activityIndicator.stopAnimating()
     }
